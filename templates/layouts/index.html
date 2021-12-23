@@ -1,0 +1,45 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{title}}{% endblock %}
+{% block head %}
+{{ super() }}
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<!-- <script defer src="/static/js/camera_utils.js"></script> -->
+<!-- <script defer src="/static/js/camera.js"></script> -->
+<script defer src="/static/js/face-api.min.js"></script>
+<script src="/static/js/script.js"></script>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    canvas {
+        position: absolute;
+    }
+
+    h1 {
+        position: absolute;
+        left: 30px;
+        top: 30px;
+    }
+
+</style>
+{% endblock %}
+{% block content %}
+<!-- <div class="container"> -->
+    <!-- <video class="input_video" width="720px" height="560px" autoplay muted></video> -->
+    <h1 id="gesture" align="">State less</h1>
+    <video id="video" width="720px" height="560px" autoplay muted></video>
+    <canvas class="output_canvas" width="720px" height="560px"></canvas>
+<!-- </div> -->
+{% endblock %}
+
