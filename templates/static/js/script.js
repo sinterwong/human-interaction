@@ -38,7 +38,7 @@ $(document).ready(function () {
         }
 
         captureStatus() {
-            this.time++;  // 记录每一帧
+            this.time++;  // 帧数记录
             window.requestAnimationFrame(() => {
                 this.forward()
             })
@@ -53,6 +53,7 @@ $(document).ready(function () {
                     this.captureStatus()
                 }) : this.captureStatus()
             }
+            // 表情识别
             if (this.time % 100 === 0) {
                 var faceInfer = null;
                 this.video.paused || this.video.currentTime === this.elapsed_time || (this.elapsed_time = this.video.currentTime, faceInfer = this.info.faceInfer());
@@ -60,6 +61,7 @@ $(document).ready(function () {
                     this.captureStatus()
                 }) : this.captureStatus()
             }
+            // 手部关键点检测与手势识别
             else if (this.time % 20 === 0) {
                 var handInfer = null;
                 this.video.paused || this.video.currentTime === this.elapsed_time || (this.elapsed_time = this.video.currentTime, handInfer = this.info.handPointInfer());
@@ -167,6 +169,20 @@ $(document).ready(function () {
         canvasElement.getContext('2d').clearRect(0, 0, canvasElement.width, canvasElement.height)
         faceapi.draw.drawDetections(canvasElement, detections)
         faceapi.draw.drawFaceExpressions(canvasElement, detections)
+        detections.forEach((result, i) => {
+            var keys = Object.keys(result["expressions"]);
+            var max = result["expressions"][keys[0]];
+            var max_key = keys[0];
+            var i;
+            for (i = 1; i < keys.length; i++) {
+                var value = result["expressions"][keys[i]];
+                if (value > max) {
+                    max = value;
+                    max_key = keys[i];
+                }
+            }
+            moodElement.innerHTML = max_key;
+        })
 
         // $.post("/faces", {
         //     detections: JSON.stringify(detections),
@@ -184,6 +200,7 @@ $(document).ready(function () {
             const box = detections[i].detection.box
             const drawBox = new faceapi.draw.DrawBox(box, { label: result.toString() })
             drawBox.draw(canvasElement)
+            identityElement.innerHTML = result["label"];
         })
         // $.post("/faces_recognition", {
         //     detections: JSON.stringify(result),
@@ -195,6 +212,8 @@ $(document).ready(function () {
     // const videoElement = document.getElementsByClassName("input_video")[0];
     const videoElement = document.getElementById("video");
     const gestureElement = document.getElementById("gesture");
+    const identityElement = document.getElementById("identity");
+    const moodElement = document.getElementById("mood");
     const canvasElement = document.getElementsByClassName("output_canvas")[0];
     const canvasCtx = canvasElement.getContext("2d");
 
@@ -239,6 +258,8 @@ $(document).ready(function () {
         faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6)
     })
 
+    // /** 
+
     const displaySize = { width: videoElement.width, height: videoElement.height }
 
     const inference = new Inference(videoElement, {
@@ -259,5 +280,6 @@ $(document).ready(function () {
         height: 560
     });
     inference.start();
+    // */
 
 });

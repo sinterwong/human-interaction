@@ -26,10 +26,22 @@
         position: absolute;
     }
 
-    h1 {
+    #gesture {
         position: absolute;
         left: 30px;
         top: 30px;
+    }
+
+    #identity {
+        position: absolute;
+        left: 30px;
+        top: 60px;
+    }
+
+    #mood {
+        position: absolute;
+        left: 30px;
+        top: 90px;
     }
 
 </style>
@@ -37,7 +49,9 @@
 {% block content %}
 <!-- <div class="container"> -->
     <!-- <video class="input_video" width="720px" height="560px" autoplay muted></video> -->
-    <h1 id="gesture" align="">State less</h1>
+    <h2 id="gesture">State less</h1>
+    <h2 id="identity">State less</h1>
+    <h2 id="mood">State less</h1>
     <video id="video" width="720px" height="560px" autoplay muted></video>
     <canvas class="output_canvas" width="720px" height="560px"></canvas>
 <!-- </div> -->
