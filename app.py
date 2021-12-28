@@ -19,9 +19,9 @@ def index():
 
 @app.route("/initFeatureLibraries", methods=["POST"])
 def post_init_feature_libraries():
-    
+
     descriptions = eval(request.form["descriptions"])
-    
+
     people_features = {}
     for p in descriptions:
         for name, s_feature in p:
@@ -29,13 +29,14 @@ def post_init_feature_libraries():
             feature = np.array(list(feature), dtype=np.float32)
             people_features[name] = feature
     features = np.array(list(people_features.values()))
-    insert_num = features_manager.mult_insert(features=features, names=list(people_features.keys()))
-    
+    insert_num = features_manager.mult_insert(
+        features=features, names=list(people_features.keys()))
+
     with open(fm_path, 'wb') as wf:
         pk.dump(features_manager, wf)
 
     result = {
-        "insert number": insert_num, 
+        "insert number": insert_num,
         "update number": len(people_features) - insert_num
     }
     return jsonify(result)
@@ -50,7 +51,7 @@ def post_faces():
 @app.route("/faces_recognition", methods=["POST"])
 def post_faces_recognition():
     detections = eval(request.form["detections"])
-    
+
     results = []
     for det in detections:
         res = {}
@@ -71,6 +72,18 @@ def post_hands_points():
     return jsonify(hands_points)
 
 
+@app.route("/faceMesh", methods=["POST"])
+def post_fece_mesh_points():
+    pose_landmarks = request.form["pose_landmarks"]
+    width = request.form["width"]
+    height = request.form["height"]
+    result = {
+        "status": True,
+        "other": "hello"
+    }
+    return jsonify(result)
+
+
 @app.route("/models/<path:name>", methods=["GET"])
 def models(name):
     return send_file(os.path.join("models", name))
@@ -88,5 +101,6 @@ if __name__ == "__main__":
     else:
         with open(fm_path, mode="rb") as rf:
             features_manager = pk.load(rf)
+            features_manager.threshold = 0.938
     # face feature libraries
     app.run(host="127.0.0.1", port=5000, debug=True)

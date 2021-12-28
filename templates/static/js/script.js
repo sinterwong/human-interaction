@@ -35,7 +35,6 @@ $(document).ready(function () {
         }, function (err, req, resp) {
             console.log(resp);
         });
-        
     }
 
     class Inference {
@@ -91,8 +90,13 @@ $(document).ready(function () {
                     this.captureStatus()
                 }) : this.captureStatus()
             }
-            else {
-                this.captureStatus()
+            // 人脸网格提取
+            else{
+                var faceMeshInfer = null;
+                this.video.paused || this.video.currentTime === this.elapsed_time || (this.elapsed_time = this.video.currentTime, faceMeshInfer = this.info.faceMesh());
+                faceMeshInfer ? faceMeshInfer.then(() => {
+                    this.captureStatus()
+                }) : this.captureStatus()
             }
         }
 
@@ -166,20 +170,46 @@ $(document).ready(function () {
                 const element = landmarks[index];
                 realLandmarks.push([element["x"] * canvasElement.width, element["y"] * canvasElement.height]);
             }
-
+            // 手腕处坐标
             wrist = realLandmarks[0];
+            // 通过计算向量夹角的方式，获取每个手指的开合状态
             fingerStatus = []
             for (let index = 1; index < realLandmarks.length; index += 4) {
                 fingerPoints = realLandmarks.slice(index, index + 4);
                 fingerStatus.push(isOpen(wrist, fingerPoints, 90));
             }
-
+            // 根据每个手指的开合状态获取手势识别结果
             const actionKey = fingerStatus.join('')
             const action = handAction[actionKey];
             gestureElement.innerHTML = action;
         })
         // $.post("/hands", {
         //     pose_landmarks: JSON.stringify(results.multiHandLandmarks),
+        //     width: canvasElement.width,
+        //     height: canvasElement.height
+        // }, function (err, req, resp) {
+        //     console.log(resp);
+        // });
+    }
+
+    function faceMeshResults(results) {
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        if (results.multiFaceLandmarks) {
+            for (const landmarks of results.multiFaceLandmarks) {
+                drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION,
+                    { color: '#C0C0C070', lineWidth: 1 });
+                drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, { color: '#FF3030' });
+                drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYEBROW, { color: '#FF3030' });
+                drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_IRIS, { color: '#FF3030' });
+                drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE, { color: '#30FF30' });
+                drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYEBROW, { color: '#30FF30' });
+                drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_IRIS, { color: '#30FF30' });
+                drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, { color: '#E0E0E0' });
+                drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS, { color: '#E0E0E0' });
+            }
+        }
+        // $.post("/faceMesh", {
+        //     pose_landmarks: JSON.stringify(results.multiFaceLandmarks),
         //     width: canvasElement.width,
         //     height: canvasElement.height
         // }, function (err, req, resp) {
@@ -244,8 +274,11 @@ $(document).ready(function () {
         "11001": "love you",
         "01100": "Yeah",
         "01110": "three",
+        "11100": "three",
         "01111": "four",
+        "11110": "four",
         "11111": "palm",
+        "10111": "OK",
         "00111": "OK",
         "00001": "low",
         "11000": "gun",
@@ -253,6 +286,7 @@ $(document).ready(function () {
         "10000": "thumb up"
     }
 
+    // 手部关键点
     const hands = new Hands({
         locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
@@ -266,7 +300,21 @@ $(document).ready(function () {
     });
     hands.onResults(handsResults)
 
-    let faceMatcher = null;
+    // 人脸网格
+    const faceMesh = new FaceMesh({
+        locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+        }
+    });
+    faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+    faceMesh.onResults(faceMeshResults);
+
+    // let faceMatcher = null;
     Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
         faceapi.nets.ssdMobilenetv1.loadFromUri('/models'),
@@ -279,13 +327,14 @@ $(document).ready(function () {
         // faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6)
     })
 
-    // /** 
-
     const displaySize = { width: videoElement.width, height: videoElement.height }
 
     const inference = new Inference(videoElement, {
         handPointInfer: async () => {
             await hands.send({ image: videoElement });
+        },
+        faceMesh: async () => {
+            await faceMesh.send({ image: videoElement });
         },
         faceRecInfer: async () => {
             const detections = await faceapi.detectAllFaces(videoElement, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors()
@@ -301,6 +350,5 @@ $(document).ready(function () {
         height: 560
     });
     inference.start();
-    // */
 
 });

@@ -4,7 +4,7 @@ import numpy as np
 
 
 class FeaturesManager(object):
-    def __init__(self, features: np.ndarray = None, names: list = None, dims: int = 128, threshold: float = 0.9) -> None:
+    def __init__(self, features: np.ndarray = None, names: list = None, dims: int = 128, threshold: float = 0.938) -> None:
         super().__init__()
         self.dims = dims
         self.__features = None
@@ -87,6 +87,6 @@ class FeaturesManager(object):
         peoples = list(self.__feature_mapping.keys())
         scores = self.__cosine_similar(feature)
         res_idx = np.argmax(scores, axis=0)[0]
-        if scores[res_idx] < self.threshold:
-            return peoples[res_idx], scores[res_idx]
+        if self.threshold > scores[res_idx]:
+            return peoples[0], 0.0
         return peoples[res_idx], float(scores[res_idx])
