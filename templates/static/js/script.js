@@ -16,6 +16,28 @@ $(document).ready(function () {
         )
     }
 
+    async function generateFeatureLibraries() {
+        const labels = ['Sinter', 'Man', 'Woman', 'Black Widow', 'Captain America', 'Captain Marvel', 'Hawkeye', 'Jim Rhodes', 'Thor', 'Tony Stark']
+        const descriptions = []
+        for (let index = 0; index < labels.length; index++) {
+            const label2Features = [];
+            for (let i = 1; i <= 2; i++) {
+                const label = labels[index]
+                const img = await faceapi.fetchImage("labeled_images/" + label + "/" + i + ".jpg");
+                const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+                label2Features.push([label, detections.descriptor]);
+            }
+            descriptions.push(label2Features);
+        }
+
+        $.post("/initFeatureLibraries", {
+            descriptions: JSON.stringify(descriptions),
+        }, function (err, req, resp) {
+            console.log(resp);
+        });
+        
+    }
+
     class Inference {
         constructor(video, info) {
             this.defaultInfo = {
@@ -119,7 +141,7 @@ $(document).ready(function () {
                 included_angle = 360 - included_angle
             }
         }
-        if (included_angle < 90) {
+        if (included_angle < threshold) {
             return "1";
         }
         else {
@@ -194,19 +216,17 @@ $(document).ready(function () {
     }
 
     function faceRecResults(detections) {
-        canvasElement.getContext('2d').clearRect(0, 0, canvasElement.width, canvasElement.height)
-        const results = detections.map(d => faceMatcher.findBestMatch(d.descriptor))
-        results.forEach((result, i) => {
-            const box = detections[i].detection.box
-            const drawBox = new faceapi.draw.DrawBox(box, { label: result.toString() })
-            drawBox.draw(canvasElement)
-            identityElement.innerHTML = result["label"];
-        })
-        // $.post("/faces_recognition", {
-        //     detections: JSON.stringify(result),
-        // }, function (err, req, resp) {
-        //     console.log(resp);
-        // });
+        $.post("/faces_recognition", {
+            detections: JSON.stringify(detections),
+        }, function (err, req, resp) {
+            let res = "";
+            for (let index = 0; index < resp["responseJSON"].length; index++) {
+                res += resp["responseJSON"][index]["name"] + " - " + resp["responseJSON"][index]["score"]
+                res += " -- "
+            }
+            identityElement.innerHTML = res;
+            console.log(resp);
+        });
     }
 
     // const videoElement = document.getElementsByClassName("input_video")[0];
@@ -254,8 +274,9 @@ $(document).ready(function () {
         faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
         faceapi.nets.faceExpressionNet.loadFromUri('/models')
     ]).then(async () => {
-        const labeledFaceDescriptors = await buildFeatureLibrary()
-        faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6)
+        // generateFeatureLibraries()
+        // const labeledFaceDescriptors = await buildFeatureLibrary()
+        // faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6)
     })
 
     // /** 
